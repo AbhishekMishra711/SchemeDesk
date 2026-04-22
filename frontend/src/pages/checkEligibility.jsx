@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import { matchSchemes } from '../services/api';
+import { matchSchemes, getStudentSchemes } from '../services/api';
 import EligibilityForm from '../components/eligibilityForm';
 import SchemeCard from '../components/schemeCard';
 import ErrorMessage from '../components/errorMessage';
@@ -19,7 +19,45 @@ const CheckEligibility = () => {
             setLoading(true);
             setError(null);
             
-            const response = await matchSchemes(formData);
+            let response;
+            
+            if (formData.schemeType === 'student') {
+                // Student schemes fetch karo
+                const studentData = await getStudentSchemes();
+                
+                // Frontend filtering
+                const filtered = studentData.data.filter(scheme => {
+                    const eli = scheme.eligibility;
+                    
+                    // Age check
+                    if (formData.age < eli.minAge || formData.age > eli.maxAge) return false;
+                    
+                    // Gender check
+                    if (!eli.gender.includes(formData.gender)) return false;
+                    
+                    // Category check
+                    if (!eli.category.includes(formData.category)) return false;
+                    
+                    // State check
+                    if (!eli.states.includes('All India') && !eli.states.includes(formData.state)) return false;
+                    
+                    // Income check
+                    if (eli.maxIncome && formData.income > eli.maxIncome) return false;
+                    
+                    return true;
+                });
+                
+                response = {
+                    success: true,
+                    count: filtered.length,
+                    data: filtered,
+                    userDetails: formData
+                };
+            } else {
+                // General schemes (existing logic)
+                response = await matchSchemes(formData);
+            }
+            
             setResults(response);
             setSubmitted(true);
             
@@ -80,8 +118,18 @@ const CheckEligibility = () => {
 
                         {/* User Details Summary */}
                         {results?.userDetails && (
-                            <div className="bg-blue-50 rounded-xl p-6 mb-8">
-                                <h3 className="font-bold text-blue-800 mb-4">Your Profile:</h3>
+                            <div className={`rounded-xl p-6 mb-8 ${
+                                results.userDetails.schemeType === 'student' 
+                                    ? 'bg-green-50' 
+                                    : 'bg-blue-50'
+                            }`}>
+                                <h3 className={`font-bold mb-4 ${
+                                    results.userDetails.schemeType === 'student'
+                                        ? 'text-green-800'
+                                        : 'text-blue-800'
+                                }`}>
+                                    Your Profile:
+                                </h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                     <div>
                                         <span className="text-gray-600">Age:</span>
@@ -103,25 +151,35 @@ const CheckEligibility = () => {
                                         <span className="text-gray-600">Income:</span>
                                         <span className="ml-2 font-semibold">₹{results.userDetails.income.toLocaleString()}</span>
                                     </div>
-                                    <div>
-                                        <span className="text-gray-600">Business:</span>
-                                        <span className="ml-2 font-semibold">{results.userDetails.businessType}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-600">Sector:</span>
-                                        <span className="ml-2 font-semibold">{results.userDetails.sector}</span>
-                                    </div>
+                                    {results.userDetails.schemeType === 'general' && (
+                                        <>
+                                            <div>
+                                                <span className="text-gray-600">Business:</span>
+                                                <span className="ml-2 font-semibold">{results.userDetails.businessType}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-600">Sector:</span>
+                                                <span className="ml-2 font-semibold">{results.userDetails.sector}</span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}
 
                         {/* Results Count */}
                         {results?.count > 0 ? (
-                            <div className="flex items-center bg-green-50 text-green-700 px-6 py-4 rounded-xl mb-8">
+                            <div className={`flex items-center px-6 py-4 rounded-xl mb-8 ${
+                                results.userDetails?.schemeType === 'student'
+                                    ? 'bg-green-50 text-green-700'
+                                    : 'bg-blue-50 text-blue-700'
+                            }`}>
                                 <CheckCircle size={28} className="mr-3" />
                                 <div>
                                     <span className="font-bold text-2xl">{results.count}</span>
-                                    <span className="ml-2 text-lg">schemes found for you!</span>
+                                    <span className="ml-2 text-lg">
+                                        {results.userDetails?.schemeType === 'student' ? 'student schemes' : 'schemes'} found for you!
+                                    </span>
                                 </div>
                             </div>
                         ) : (

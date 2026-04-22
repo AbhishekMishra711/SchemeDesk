@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, Search, FileText, ClipboardCheck, Heart, LogIn, LogOut, User } from 'lucide-react';
+import { Home, Search, FileText, ClipboardCheck, Heart, LogIn, LogOut, User,GraduationCap  } from 'lucide-react';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
@@ -48,6 +48,14 @@ const Navbar = () => {
                             <ClipboardCheck size={20} />
                             <span className="hidden md:inline">Eligibility</span>
                         </Link>
+
+                        <Link 
+    to="/student-schemes" 
+    className="flex items-center space-x-1 hover:text-blue-200 transition"
+>
+    <GraduationCap size={20} />
+    <span className="hidden md:inline">Students</span>
+</Link>
 
                         {/* Conditional - Logged in or not */}
                         {user ? (

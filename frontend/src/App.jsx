@@ -13,6 +13,7 @@ import CheckEligibility from './pages/checkEligibility';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Favorites from './pages/Favorites';
+import StudentSchemes from './pages/StudentSchemes';
 
 function App() {
     return (
@@ -30,6 +31,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/student-schemes" element={<StudentSchemes />} />
                 </Routes>
             </Router>
         </AuthProvider>

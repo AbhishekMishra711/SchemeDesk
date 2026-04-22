@@ -186,3 +186,27 @@ export const searchSchemes = async (req, res) => {
         });
     }
 };
+
+// ============================================
+// 5. GET STUDENT SCHEMES
+// ============================================
+export const getStudentSchemes = async (req, res) => {
+    try {
+        const schemes = await Scheme.find({
+            isActive: true,
+            'eligibility.businessType': { $in: ['Student'] }
+        });
+
+        res.json({
+            success: true,
+            count: schemes.length,
+            data: schemes
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Server Error',
+            error: error.message
+        });
+    }
+};

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Scheme from '../models/Scheme.js';
 import schemes from './schemes.js';
+import studentSchemes from './studentSchemes.js';
 
 // ============================================
 // .env file load karo
@@ -27,11 +28,11 @@ const importData = async () => {
     try {
         // Pehle purana data delete karo
         await Scheme.deleteMany();
+        await Scheme.insertMany(schemes);
+await Scheme.insertMany(studentSchemes);
+console.log(`${schemes.length + studentSchemes.length} total schemes added!`);
         console.log('Old data deleted!');
 
-        // Naya data daalo
-        await Scheme.insertMany(schemes);
-        console.log(`${schemes.length} schemes added to database!`);
 
         console.log('Seeding Complete!');
         process.exit();

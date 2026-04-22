@@ -3,7 +3,8 @@ import {
     getAllSchemes,
     getSchemeById,
     matchSchemes,
-    searchSchemes
+    searchSchemes,
+    getStudentSchemes
 } from '../controllers/schemeController.js';
 
 // ============================================
@@ -20,6 +21,9 @@ router.get('/', getAllSchemes);
 
 // GET /api/schemes/search?q=mudra - Search schemes
 router.get('/search', searchSchemes);
+
+// GET /api/schemes/student - Student schemes
+router.get('/student', getStudentSchemes);
 
 // GET /api/schemes/:id - Ek scheme by ID
 router.get('/:id', getSchemeById);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Search, FileCheck, Users, TrendingUp } from 'lucide-react';
+import { ArrowRight, Search, FileCheck, Users, TrendingUp,GraduationCap} from 'lucide-react';
 
 const Home = () => {
     return (
@@ -125,7 +125,54 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+            {/* ============================================ */}
+{/* STUDENT SCHEMES SECTION */}
+{/* ============================================ */}
+<section className="py-16 bg-gray-50">
+    <div className="max-w-7xl mx-auto px-4">
+        
+        <div className="flex flex-col md:flex-row items-center gap-12">
+            
+            {/* Left - Text */}
+            <div className="flex-1">
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                    🎓 New Section
+                </span>
+                <h2 className="text-3xl font-bold text-gray-800 mt-4 mb-4">
+                    Schemes For Students Too!
+                </h2>
+                <p className="text-gray-600 text-lg mb-6">
+                    Are you a student? Discover scholarships, education loans, skill development 
+                    programs and startup grants made specifically for students across India.
+                </p>
+                <Link
+                    to="/student-schemes"
+                    className="inline-flex items-center bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition"
+                >
+                    <GraduationCap size={20} className="mr-2" />
+                    Explore Student Schemes
+                    <ArrowRight size={20} className="ml-2" />
+                </Link>
+            </div>
 
+            {/* Right - Cards Preview */}
+            <div className="flex-1 grid grid-cols-2 gap-4">
+                {[
+                    { title: "Scholarships", desc: "Merit & need based", color: "blue", count: "5+" },
+                    { title: "Education Loans", desc: "Low interest rates", color: "green", count: "3+" },
+                    { title: "Skill Programs", desc: "Free training", color: "purple", count: "4+" },
+                    { title: "Startup Grants", desc: "For student founders", color: "orange", count: "3+" },
+                ].map((item) => (
+                    <div key={item.title} className="bg-white p-4 rounded-xl shadow-md">
+                        <div className="text-2xl font-bold text-blue-600">{item.count}</div>
+                        <div className="font-semibold text-gray-800">{item.title}</div>
+                        <div className="text-sm text-gray-500">{item.desc}</div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+</section>
             {/* ============================================ */}
             {/* CTA SECTION - Call To Action */}
             {/* ============================================ */}

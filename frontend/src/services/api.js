@@ -55,6 +55,12 @@ export const matchSchemes = async (userDetails) => {
     return response.data;
 };
 
+// 5. Student schemes laao
+export const getStudentSchemes = async () => {
+    const response = await api.get('/schemes/student');
+    return response.data;
+};
+
 // ============================================
 // AUTH APIs
 // ============================================

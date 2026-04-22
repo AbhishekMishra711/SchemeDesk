@@ -15,6 +15,9 @@ const EligibilityForm = ({ onSubmit, loading }) => {
         sector: ''
     });
 
+    // NEW: Scheme type toggle
+    const [schemeType, setSchemeType] = useState('general');
+
     // Input change hone pe state update karo
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -32,7 +35,8 @@ const EligibilityForm = ({ onSubmit, loading }) => {
         const submitData = {
             ...formData,
             age: parseInt(formData.age),
-            income: parseInt(formData.income)
+            income: parseInt(formData.income),
+            schemeType  // NEW: scheme type pass karo
         };
         
         onSubmit(submitData);
@@ -55,6 +59,30 @@ const EligibilityForm = ({ onSubmit, loading }) => {
 
     return (
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6">
+            
+            {/* NEW: Toggle Section */}
+            <div className="mb-6 bg-gray-100 p-4 rounded-lg">
+                <div className="flex items-center justify-center gap-4">
+                    <span className={`font-semibold transition ${schemeType === 'general' ? 'text-blue-600' : 'text-gray-400'}`}>
+                        💼 General Schemes
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => setSchemeType(prev => prev === 'general' ? 'student' : 'general')}
+                        className={`relative w-14 h-7 rounded-full transition-colors ${
+                            schemeType === 'student' ? 'bg-green-600' : 'bg-blue-600'
+                        }`}
+                    >
+                        <span className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform duration-200 ${
+                            schemeType === 'student' ? 'translate-x-7' : 'translate-x-0'
+                        }`}></span>
+                    </button>
+                    <span className={`font-semibold transition ${schemeType === 'student' ? 'text-green-600' : 'text-gray-400'}`}>
+                        🎓 Student Schemes
+                    </span>
+                </div>
+            </div>
+
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
                 Check Your Eligibility
             </h2>
@@ -153,50 +181,58 @@ const EligibilityForm = ({ onSubmit, loading }) => {
                     />
                 </div>
 
-                {/* Business Type */}
-                <div>
-                    <label className="block text-gray-700 font-medium mb-2">
-                        Business Type *
-                    </label>
-                    <select
-                        name="businessType"
-                        value={formData.businessType}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    >
-                        <option value="">Select Business Type</option>
-                        {businessTypeOptions.map(option => (
-                            <option key={option} value={option}>{option}</option>
-                        ))}
-                    </select>
-                </div>
+                {/* Business Type - Only for General */}
+                {schemeType === 'general' && (
+                    <div>
+                        <label className="block text-gray-700 font-medium mb-2">
+                            Business Type *
+                        </label>
+                        <select
+                            name="businessType"
+                            value={formData.businessType}
+                            onChange={handleChange}
+                            required={schemeType === 'general'}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                        >
+                            <option value="">Select Business Type</option>
+                            {businessTypeOptions.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
-                {/* Sector */}
-                <div className="md:col-span-2">
-                    <label className="block text-gray-700 font-medium mb-2">
-                        Sector/Industry *
-                    </label>
-                    <select
-                        name="sector"
-                        value={formData.sector}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    >
-                        <option value="">Select Sector</option>
-                        {sectorOptions.map(option => (
-                            <option key={option} value={option}>{option}</option>
-                        ))}
-                    </select>
-                </div>
+                {/* Sector - Only for General */}
+                {schemeType === 'general' && (
+                    <div className="md:col-span-2">
+                        <label className="block text-gray-700 font-medium mb-2">
+                            Sector/Industry *
+                        </label>
+                        <select
+                            name="sector"
+                            value={formData.sector}
+                            onChange={handleChange}
+                            required={schemeType === 'general'}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                        >
+                            <option value="">Select Sector</option>
+                            {sectorOptions.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
 
             {/* Submit Button */}
             <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center disabled:bg-blue-400 disabled:cursor-not-allowed"
+                className={`w-full mt-6 py-3 rounded-lg font-semibold text-white transition flex items-center justify-center disabled:cursor-not-allowed ${
+                    schemeType === 'student' 
+                        ? 'bg-green-600 hover:bg-green-700 disabled:bg-green-400' 
+                        : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400'
+                }`}
             >
                 {loading ? (
                     <>
@@ -206,7 +242,7 @@ const EligibilityForm = ({ onSubmit, loading }) => {
                 ) : (
                     <>
                         <Search size={20} className="mr-2" />
-                        Find Matching Schemes
+                        Find {schemeType === 'student' ? 'Student' : 'Matching'} Schemes
                     </>
                 )}
             </button>
