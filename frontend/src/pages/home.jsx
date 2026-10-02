@@ -13,7 +13,7 @@ const Home = () => {
                 <div className="max-w-7xl mx-auto px-4 text-center">
                     
                     <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                        Find Government Scheme
+                        Find Government Schemes
                         <span className="block text-blue-200">Made For You</span>
                     </h1>
                     
