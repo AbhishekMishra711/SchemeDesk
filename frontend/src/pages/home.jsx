@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Search, FileCheck, Users, TrendingUp,GraduationCap} from 'lucide-react';
 
-const Home = ) => {
+const Home = () => {
     return (
         <div className="min-h-screen">
             
