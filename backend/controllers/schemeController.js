@@ -1,4 +1,4 @@
-import Scheme from '../models/Scheme.js';
+import Scheme from '../models/scheme.js';
 
 // ============================================
 // 1. GET ALL SCHEMES - Saari schemes dikhao
