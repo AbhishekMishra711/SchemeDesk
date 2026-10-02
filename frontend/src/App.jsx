@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
 // Components
@@ -32,6 +32,8 @@ function App() {
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/favorites" element={<Favorites />} />
                     <Route path="/student-schemes" element={<StudentSchemes />} />
+                    {/* Fallback route */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </Router>
         </AuthProvider>

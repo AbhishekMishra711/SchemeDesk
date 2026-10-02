@@ -4,7 +4,7 @@ import { getAllSchemes, searchSchemes } from '../services/api';
 import SchemeCard from '../components/schemeCard';
 import Loading from '../components/loading';
 import ErrorMessage from '../components/errorMessage';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, RefreshCw } from 'lucide-react';
 
 const AllSchemes = () => {
     // States
@@ -24,9 +24,10 @@ const AllSchemes = () => {
             setLoading(true);
             setError(null);
             const response = await getAllSchemes();
-            setSchemes(response.data);
+            setSchemes(response.data || []);
         } catch (err) {
-            setError('Failed to load schemes. Please try again.');
+            console.error('Fetch schemes error:', err);
+            setError(err.response?.data?.message || 'Failed to load schemes. Please ensure the backend server is running.');
         } finally {
             setLoading(false);
         }
@@ -44,10 +45,11 @@ const AllSchemes = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await searchSchemes(searchQuery);
-            setSchemes(response.data);
+            const response = await searchSchemes(searchQuery.trim());
+            setSchemes(response.data || []);
         } catch (err) {
-            setError('Search failed. Please try again.');
+            console.error('Search error:', err);
+            setError(err.response?.data?.message || 'Search failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -71,7 +73,7 @@ const AllSchemes = () => {
                         All Government Schemes
                     </h1>
                     <p className="text-gray-600">
-                        Browse through {schemes.length} available schemes for startups and businesses
+                        Browse through {schemes.length} available schemes for startups, students, and businesses
                     </p>
                 </div>
 
@@ -87,12 +89,12 @@ const AllSchemes = () => {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search schemes by name or keyword..."
-                                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                             />
                         </div>
                         <button
                             type="submit"
-                            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
+                            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold text-sm"
                         >
                             Search
                         </button>
@@ -100,7 +102,7 @@ const AllSchemes = () => {
                             <button
                                 type="button"
                                 onClick={clearSearch}
-                                className="bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 transition"
+                                className="bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
                             >
                                 Clear
                             </button>
@@ -114,12 +116,19 @@ const AllSchemes = () => {
                 {loading ? (
                     <Loading />
                 ) : error ? (
-                    <ErrorMessage message={error} />
+                    <ErrorMessage message={error} onRetry={fetchSchemes} />
                 ) : schemes.length === 0 ? (
-                    <div className="text-center py-12">
+                    <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100 max-w-md mx-auto">
                         <Filter size={48} className="mx-auto text-gray-400 mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-600">No schemes found</h3>
-                        <p className="text-gray-500">Try a different search term</p>
+                        <h3 className="text-xl font-semibold text-gray-700 mb-1">No schemes found</h3>
+                        <p className="text-gray-500 text-sm mb-4">Try a different search term</p>
+                        <button
+                            onClick={clearSearch}
+                            className="inline-flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
+                        >
+                            <RefreshCw size={14} />
+                            Reset Search
+                        </button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

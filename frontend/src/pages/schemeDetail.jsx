@@ -1,84 +1,156 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getSchemeById } from '../services/api';
+import { getSchemeById, addFavorite, removeFavorite } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Loading from '../components/loading';
 import ErrorMessage from '../components/errorMessage';
 import { 
     ArrowLeft, Building2, Users, MapPin, Briefcase, 
     GraduationCap, IndianRupee, FileText, ExternalLink,
-    CheckCircle
+    CheckCircle, Heart
 } from 'lucide-react';
 
 const SchemeDetail = () => {
     const { id } = useParams();
+    const { user, updateFavorites } = useAuth();
     const [scheme, setScheme] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [favLoading, setFavLoading] = useState(false);
 
-    useEffect(() => {
-        fetchScheme();
-    }, [id]);
+    const isFavorite = Boolean(
+        user?.favorites?.some(fav => {
+            if (!fav) return false;
+            const favId = typeof fav === 'string' ? fav : (fav._id || fav.toString());
+            return favId === id;
+        })
+    );
 
-    const fetchScheme = async () => {
+    const handleFavoriteToggle = async () => {
+        if (!user) {
+            alert('Please login to save this scheme to your favorites');
+            return;
+        }
+
+        setFavLoading(true);
         try {
-            setLoading(true);
-            const response = await getSchemeById(id);
-            setScheme(response.data);
+            if (isFavorite) {
+                const res = await removeFavorite(id);
+                updateFavorites(res.favorites);
+            } else {
+                const res = await addFavorite(id);
+                updateFavorites(res.favorites);
+            }
         } catch (err) {
-            setError('Failed to load scheme details.');
+            console.error('Favorite toggle error:', err);
+            alert(err.response?.data?.message || 'Failed to update favorite.');
         } finally {
-            setLoading(false);
+            setFavLoading(false);
         }
     };
 
+    const fetchScheme = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await getSchemeById(id);
+            setScheme(response.data);
+        } catch (err) {
+            console.error('Fetch scheme detail error:', err);
+            setError(err.response?.data?.message || 'Failed to load scheme details. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    }, [id]);
+
+    useEffect(() => {
+        fetchScheme();
+    }, [fetchScheme]);
+
     if (loading) return <Loading />;
-    if (error) return <ErrorMessage message={error} />;
-    if (!scheme) return <ErrorMessage message="Scheme not found" />;
+    if (error) return (
+        <div className="min-h-screen bg-gray-50 py-8 px-4">
+            <div className="max-w-4xl mx-auto">
+                <Link to="/schemes" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 font-semibold">
+                    <ArrowLeft size={20} className="mr-2" />
+                    Back to All Schemes
+                </Link>
+                <ErrorMessage message={error} onRetry={fetchScheme} />
+            </div>
+        </div>
+    );
+    if (!scheme) return (
+        <div className="min-h-screen bg-gray-50 py-8 px-4">
+            <div className="max-w-4xl mx-auto">
+                <Link to="/schemes" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 font-semibold">
+                    <ArrowLeft size={20} className="mr-2" />
+                    Back to All Schemes
+                </Link>
+                <ErrorMessage message="Scheme not found" onRetry={fetchScheme} />
+            </div>
+        </div>
+    );
+
+    const eli = scheme.eligibility || {};
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-4xl mx-auto px-4">
 
-                {/* Back Button */}
-                <Link
-                    to="/schemes"
-                    className="flex items-center text-blue-600 hover:text-blue-800 mb-6 font-semibold"
-                >
-                    <ArrowLeft size={20} className="mr-2" />
-                    Back to All Schemes
-                </Link>
+                {/* Back Button and Favorite Header Action */}
+                <div className="flex justify-between items-center mb-6">
+                    <Link
+                        to="/schemes"
+                        className="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition"
+                    >
+                        <ArrowLeft size={20} className="mr-2" />
+                        Back to All Schemes
+                    </Link>
+
+                    <button
+                        onClick={handleFavoriteToggle}
+                        disabled={favLoading}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition shadow-sm ${
+                            isFavorite 
+                                ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' 
+                                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                    >
+                        <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} className={isFavorite ? 'text-red-500' : 'text-gray-400'} />
+                        {isFavorite ? 'Saved in Favorites' : 'Save to Favorites'}
+                    </button>
+                </div>
 
                 {/* Main Card */}
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                     
                     {/* Header */}
-                    <div className="bg-blue-600 text-white p-6">
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 md:p-8">
                         <h1 className="text-2xl md:text-3xl font-bold mb-2">
                             {scheme.name}
                         </h1>
-                        <div className="flex items-center text-blue-100">
-                            <Building2 size={18} className="mr-2" />
-                            {scheme.ministry}
+                        <div className="flex items-center text-blue-100 text-sm md:text-base">
+                            <Building2 size={18} className="mr-2 flex-shrink-0" />
+                            <span>{scheme.ministry}</span>
                         </div>
                     </div>
 
                     {/* Content */}
-                    <div className="p-6">
+                    <div className="p-6 md:p-8">
 
                         {/* Description */}
                         <div className="mb-8">
                             <h2 className="text-xl font-bold text-gray-800 mb-3">About this Scheme</h2>
-                            <p className="text-gray-600 leading-relaxed">{scheme.description}</p>
+                            <p className="text-gray-600 leading-relaxed text-base">{scheme.description}</p>
                         </div>
 
                         {/* Benefits */}
-                        <div className="bg-green-50 rounded-xl p-6 mb-8">
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
                             <h2 className="text-xl font-bold text-green-800 mb-3 flex items-center">
-                                <IndianRupee size={24} className="mr-2" />
+                                <IndianRupee size={24} className="mr-2 flex-shrink-0" />
                                 Benefits
                             </h2>
-                            <p className="text-green-700">{scheme.benefits}</p>
+                            <p className="text-green-700 leading-relaxed">{scheme.benefits}</p>
                         </div>
 
                         {/* Eligibility */}
@@ -86,82 +158,82 @@ const SchemeDetail = () => {
                             <h2 className="text-xl font-bold text-gray-800 mb-4">Eligibility Criteria</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 
-                                <div className="flex items-start p-4 bg-gray-50 rounded-lg">
-                                    <Users size={20} className="text-blue-600 mr-3 mt-1" />
+                                <div className="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                    <Users size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
                                     <div>
-                                        <div className="font-semibold text-gray-800">Age</div>
-                                        <div className="text-gray-600">
-                                            {scheme.eligibility.minAge} - {scheme.eligibility.maxAge} years
+                                        <div className="font-semibold text-gray-800 text-sm">Age Range</div>
+                                        <div className="text-gray-600 text-sm">
+                                            {eli.minAge ?? 0} - {eli.maxAge ?? 100} years
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start p-4 bg-gray-50 rounded-lg">
-                                    <Users size={20} className="text-blue-600 mr-3 mt-1" />
+                                <div className="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                    <Users size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
                                     <div>
-                                        <div className="font-semibold text-gray-800">Gender</div>
-                                        <div className="text-gray-600">
-                                            {scheme.eligibility.gender.join(', ')}
+                                        <div className="font-semibold text-gray-800 text-sm">Gender</div>
+                                        <div className="text-gray-600 text-sm">
+                                            {Array.isArray(eli.gender) ? eli.gender.join(', ') : (eli.gender || 'All')}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start p-4 bg-gray-50 rounded-lg">
-                                    <Users size={20} className="text-blue-600 mr-3 mt-1" />
+                                <div className="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                    <Users size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
                                     <div>
-                                        <div className="font-semibold text-gray-800">Category</div>
-                                        <div className="text-gray-600">
-                                            {scheme.eligibility.category.join(', ')}
+                                        <div className="font-semibold text-gray-800 text-sm">Category</div>
+                                        <div className="text-gray-600 text-sm">
+                                            {Array.isArray(eli.category) ? eli.category.join(', ') : (eli.category || 'All')}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start p-4 bg-gray-50 rounded-lg">
-                                    <MapPin size={20} className="text-blue-600 mr-3 mt-1" />
+                                <div className="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                    <MapPin size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
                                     <div>
-                                        <div className="font-semibold text-gray-800">States</div>
-                                        <div className="text-gray-600">
-                                            {scheme.eligibility.states.join(', ')}
+                                        <div className="font-semibold text-gray-800 text-sm">States Covered</div>
+                                        <div className="text-gray-600 text-sm">
+                                            {Array.isArray(eli.states) ? eli.states.join(', ') : (eli.states || 'All India')}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start p-4 bg-gray-50 rounded-lg">
-                                    <IndianRupee size={20} className="text-blue-600 mr-3 mt-1" />
+                                <div className="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                    <IndianRupee size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
                                     <div>
-                                        <div className="font-semibold text-gray-800">Max Income</div>
-                                        <div className="text-gray-600">
-                                            ₹{scheme.eligibility.maxIncome.toLocaleString()}
+                                        <div className="font-semibold text-gray-800 text-sm">Max Income</div>
+                                        <div className="text-gray-600 text-sm">
+                                            {eli.maxIncome != null ? `₹${Number(eli.maxIncome).toLocaleString()}` : 'No limit specified'}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start p-4 bg-gray-50 rounded-lg">
-                                    <Briefcase size={20} className="text-blue-600 mr-3 mt-1" />
+                                <div className="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                    <Briefcase size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
                                     <div>
-                                        <div className="font-semibold text-gray-800">Business Type</div>
-                                        <div className="text-gray-600">
-                                            {scheme.eligibility.businessType.join(', ')}
+                                        <div className="font-semibold text-gray-800 text-sm">Business Type</div>
+                                        <div className="text-gray-600 text-sm">
+                                            {Array.isArray(eli.businessType) ? eli.businessType.join(', ') : (eli.businessType || 'All')}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start p-4 bg-gray-50 rounded-lg">
-                                    <Briefcase size={20} className="text-blue-600 mr-3 mt-1" />
+                                <div className="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                    <Briefcase size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
                                     <div>
-                                        <div className="font-semibold text-gray-800">Sectors</div>
-                                        <div className="text-gray-600">
-                                            {scheme.eligibility.sectors.join(', ')}
+                                        <div className="font-semibold text-gray-800 text-sm">Sectors</div>
+                                        <div className="text-gray-600 text-sm">
+                                            {Array.isArray(eli.sectors) ? eli.sectors.join(', ') : (eli.sectors || 'All')}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start p-4 bg-gray-50 rounded-lg">
-                                    <GraduationCap size={20} className="text-blue-600 mr-3 mt-1" />
+                                <div className="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                    <GraduationCap size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
                                     <div>
-                                        <div className="font-semibold text-gray-800">Education</div>
-                                        <div className="text-gray-600">
-                                            {scheme.eligibility.educationRequired}
+                                        <div className="font-semibold text-gray-800 text-sm">Education Required</div>
+                                        <div className="text-gray-600 text-sm">
+                                            {eli.educationRequired || 'None'}
                                         </div>
                                     </div>
                                 </div>
@@ -169,23 +241,25 @@ const SchemeDetail = () => {
                         </div>
 
                         {/* How to Apply */}
-                        <div className="mb-8">
-                            <h2 className="text-xl font-bold text-gray-800 mb-3">How to Apply</h2>
-                            <p className="text-gray-600">{scheme.howToApply}</p>
-                        </div>
+                        {scheme.howToApply && (
+                            <div className="mb-8">
+                                <h2 className="text-xl font-bold text-gray-800 mb-3">How to Apply</h2>
+                                <p className="text-gray-600 leading-relaxed">{scheme.howToApply}</p>
+                            </div>
+                        )}
 
                         {/* Documents Required */}
-                        {scheme.documentsRequired && scheme.documentsRequired.length > 0 && (
+                        {Array.isArray(scheme.documentsRequired) && scheme.documentsRequired.length > 0 && (
                             <div className="mb-8">
                                 <h2 className="text-xl font-bold text-gray-800 mb-3 flex items-center">
-                                    <FileText size={24} className="mr-2" />
+                                    <FileText size={22} className="mr-2 text-blue-600" />
                                     Documents Required
                                 </h2>
-                                <ul className="space-y-2">
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                     {scheme.documentsRequired.map((doc, index) => (
-                                        <li key={index} className="flex items-center text-gray-600">
-                                            <CheckCircle size={18} className="text-green-500 mr-2" />
-                                            {doc}
+                                        <li key={index} className="flex items-center text-gray-700 bg-gray-50 p-2.5 rounded-lg text-sm border border-gray-100">
+                                            <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
+                                            <span>{doc}</span>
                                         </li>
                                     ))}
                                 </ul>
@@ -198,10 +272,10 @@ const SchemeDetail = () => {
                                 href={scheme.websiteLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center w-full bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition"
+                                className="flex items-center justify-center w-full bg-blue-600 text-white py-3.5 px-6 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md"
                             >
-                                <ExternalLink size={20} className="mr-2" />
-                                Visit Official Website
+                                <ExternalLink size={18} className="mr-2" />
+                                Visit Official Scheme Website
                             </a>
                         )}
                     </div>

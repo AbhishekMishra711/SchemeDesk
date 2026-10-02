@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // ============================================
-// Backend ka URL
+// Backend ka URL (with reliable fallback)
 // ============================================
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || import.meta.env.API || "/api";
 
 // ============================================
 // Axios instance banao (pre-configured)
@@ -12,20 +12,42 @@ const api = axios.create({
     baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json'
-    }
+    },
+    timeout: 10000
 });
 
 // ============================================
 // Request Interceptor - Token add karo
 // ============================================
-api.interceptors.request.use((config) => {
-    const user = localStorage.getItem('user');
-    if (user) {
-        const { token } = JSON.parse(user);
-        config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+    (config) => {
+        try {
+            const user = localStorage.getItem('user');
+            if (user) {
+                const parsed = JSON.parse(user);
+                if (parsed?.token) {
+                    config.headers.Authorization = `Bearer ${parsed.token}`;
+                }
+            }
+        } catch (err) {
+            console.error('Error reading auth token:', err);
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-    return config;
-});
+);
+
+// ============================================
+// Response Interceptor - Handle common errors
+// ============================================
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        return Promise.reject(error);
+    }
+);
 
 // ============================================
 // SCHEME APIs
@@ -45,7 +67,7 @@ export const getSchemeById = async (id) => {
 
 // 3. Schemes search karo
 export const searchSchemes = async (query) => {
-    const response = await api.get(`/schemes/search?q=${query}`);
+    const response = await api.get(`/schemes/search?q=${encodeURIComponent(query)}`);
     return response.data;
 };
 
@@ -65,37 +87,37 @@ export const getStudentSchemes = async () => {
 // AUTH APIs
 // ============================================
 
-// 5. Register
+// 6. Register
 export const registerUser = async (userData) => {
     const response = await api.post('/auth/register', userData);
     return response.data;
 };
 
-// 6. Login
+// 7. Login
 export const loginUser = async (credentials) => {
     const response = await api.post('/auth/login', credentials);
     return response.data;
 };
 
-// 7. Get Profile
+// 8. Get Profile
 export const getProfile = async () => {
     const response = await api.get('/auth/profile');
     return response.data;
 };
 
-// 8. Get Favorites
+// 9. Get Favorites
 export const getFavorites = async () => {
     const response = await api.get('/auth/favorites');
     return response.data;
 };
 
-// 9. Add Favorite
+// 10. Add Favorite
 export const addFavorite = async (schemeId) => {
     const response = await api.post('/auth/favorites/add', { schemeId });
     return response.data;
 };
 
-// 10. Remove Favorite
+// 11. Remove Favorite
 export const removeFavorite = async (schemeId) => {
     const response = await api.post('/auth/favorites/remove', { schemeId });
     return response.data;

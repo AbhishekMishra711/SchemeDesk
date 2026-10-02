@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
 
@@ -15,17 +16,27 @@ export const AuthProvider = ({ children }) => {
 
     // Page load pe check karo user logged in hai?
     useEffect(() => {
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-            setUser(JSON.parse(savedUser));
+        try {
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                setUser(JSON.parse(savedUser));
+            }
+        } catch (err) {
+            console.error('Failed to parse user from localStorage:', err);
+            localStorage.removeItem('user');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
     // Login function
     const login = (userData) => {
         setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+        try {
+            localStorage.setItem('user', JSON.stringify(userData));
+        } catch (err) {
+            console.error('Failed to save user to localStorage:', err);
+        }
     };
 
     // Logout function
@@ -36,9 +47,16 @@ export const AuthProvider = ({ children }) => {
 
     // Update favorites
     const updateFavorites = (favorites) => {
-        const updatedUser = { ...user, favorites };
-        setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setUser((prevUser) => {
+            if (!prevUser) return null;
+            const updatedUser = { ...prevUser, favorites };
+            try {
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            } catch (err) {
+                console.error('Failed to update favorites in localStorage:', err);
+            }
+            return updatedUser;
+        });
     };
 
     return (
